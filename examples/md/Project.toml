@@ -15,6 +15,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 [sources]
 POPSRegression = {path="../.."}
 [compat]
-CairoMakie = "0.15.11"
-ACEpotentials = "0.10.1"
 ACEfit = "0.3.1"
+ACEpotentials = "0.10.1"
+CairoMakie = "0.15.11"
+Molly = "0.23.3"
