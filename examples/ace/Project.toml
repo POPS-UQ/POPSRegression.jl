@@ -8,5 +8,6 @@ POPSRegression = "859322f3-d3c4-465e-abc9-91eac1a3a159"
 POPSRegression = {path="../.."}
 [compat]
 ACEfit = "0.3.1"
-CairoMakie = "0.15.11"
 ACEpotentials = "0.10.1"
+CairoMakie = "0.15.11"
+POPSRegression = "0.1.0"
