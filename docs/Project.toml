@@ -4,6 +4,6 @@ POPSRegression = "859322f3-d3c4-465e-abc9-91eac1a3a159"
 
 [compat]
 Documenter = "1"
-
+POPSRegression = "0.1.0"
 [sources]
 POPSRegression = {path=".."}
