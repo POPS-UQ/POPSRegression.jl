@@ -18,6 +18,7 @@ POPSRegression = {path="../.."}
 ACEfit = "0.3.1"
 ACEpotentials = "0.10.1"
 AtomsBuilder = "0.2.3"
+AtomsCalculatorsUtilities = "0.1.8"
 CairoMakie = "0.15.11"
 POPSRegression = "0.1.0"
 Statistics = "1.11.1"
