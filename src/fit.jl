@@ -31,7 +31,9 @@ function StatsAPI.fit(::Type{POPSModel}, X::AbstractMatrix, y::AbstractVecOrMat;
     rank_threshold=nothing,
     fit_intercept=false,
     weights=nothing,
-    verbose=false)
+    verbose=false,
+    constraint_matrix=nothing,
+    constraint_bounds=nothing)
 
     @assert size(X, 1) == size(y, 1) "Number of rows in X and y must match"
 
@@ -80,12 +82,49 @@ function StatsAPI.fit(::Type{POPSModel}, X::AbstractMatrix, y::AbstractVecOrMat;
     residuals_m = @view residuals[mask, :]       # M × D
     h_m = @view h[mask]                          # M
 
-    # compute POPS corrections
-    # i-th POPS-constrained minimizer = ridge_solution + (1/leverage[i]) A[i] residual[i]ᵀ  (P × D), stacked as (M, P, D)
-    scaled = (A_m ./ h_m')'                # M × P, row i = A[i]ᵀ / leverage[i]
-    T_corr = reshape(scaled, M, P, 1) .* reshape(residuals_m, M, 1, D)
-    T_corr_mat = reshape(T_corr, M, P * D) # M × (P·D)
 
+    if (constraint_matrix !== nothing)
+        @assert D == 1 "constrained POPS fitting only supports univariate y (D = 1)"
+        b = -vec(X_' * Wy_)
+
+        # constrained mean model: global constrained ridge solution (no per-point equality)
+        mean_qp = OSQP.Model()
+        OSQP.setup!(mean_qp; P=sparse(C_mat), q=b, A=sparse(constraint_matrix),
+                    l=constraint_bounds[1], u=constraint_bounds[2],
+                    max_iter=500_000, check_termination=10, verbose=verbose, eps_abs=5e-6, eps_rel=5e-6)
+        mean_results = OSQP.solve!(mean_qp)
+        w_final = reshape(mean_results.x, P, D)
+
+        # per-point POPS corrections: each solves the same constraints plus an
+        # equality forcing exact interpolation of that point; correction is
+        # measured relative to the constrained mean model above.
+        model = OSQP.Model()
+        T_corr_mat = zeros(FT, M, P)
+        j = 0
+        for (idx, mask_bool) in enumerate(mask)
+            mask_bool || continue
+            j += 1
+            A_full = vcat(WX_[idx, :]', constraint_matrix)
+            l_full = vcat([Wy_[idx, 1]], constraint_bounds[1])
+            u_full = vcat([Wy_[idx, 1]], constraint_bounds[2])
+            A_sparse = sparse(A_full)
+
+            OSQP.setup!(model; P=sparse(C_mat), q=b, A=A_sparse, l=l_full, u=u_full,
+                        max_iter=500_000, check_termination=10, verbose=verbose, eps_abs=5e-4, eps_rel=5e-4)
+
+            results = OSQP.solve!(model)
+            T_corr_mat[j, :] = results.x .- vec(w_final)
+        end
+        T_corr = reshape(T_corr_mat, M, P, D)
+
+    else
+        w_final = w
+        # compute POPS corrections
+        # i-th POPS-constrained minimizer = ridge_solution + (1/leverage[i]) A[i] residual[i]ᵀ  (P × D), stacked as (M, P, D)
+        scaled = (A_m ./ h_m')'                # M × P, row i = A[i]ᵀ / leverage[i]
+        T_corr = reshape(scaled, M, P, 1) .* reshape(residuals_m, M, 1, D)
+        T_corr_mat = reshape(T_corr, M, P * D) # M × (P·D)
+    end
     # Hypercube bounds  (SVD + rank truncation)
     rt = isnothing(rank_threshold) ? FT(eps(FT) * max(M, P * D)) : FT(rank_threshold)
     F = svd(T_corr_mat)
@@ -102,11 +141,11 @@ function StatsAPI.fit(::Type{POPSModel}, X::AbstractMatrix, y::AbstractVecOrMat;
         prior_covariance,
         leverage_percentile=lp,
         rank_threshold=rt,
-        coef=w,
+        coef=w_final,
         fit_intercept=fit_intercept,
         is_univariate=is_univariate,
         pops_corrections=T_corr,
-        residuals=residuals,
+        residuals=y_ - X_ * w_final,
         leverage_scores=h,
         C=C_fact,
         rotation=V_R,
