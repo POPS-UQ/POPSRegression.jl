@@ -4,9 +4,6 @@
 ## exact same per-point equality-constrained ridge QP. Also plots the two
 ## predictive distributions on top of each other so the agreement is visible.
 
-using Pkg
-Pkg.activate(@__DIR__)
-
 using Test
 using LinearAlgebra
 using Random
@@ -79,7 +76,7 @@ using SparseArrays
     lines!(ax, xg, pred_o.lower; color=:orangered, linewidth=1.5, linestyle=:dash, label="OSQP bounds")
     lines!(ax, xg, pred_o.upper; color=:orangered, linewidth=1.5, linestyle=:dash)
 
-    axislegend(ax; position=:lt, merge=true)
+    axislegend(ax; position=:lb, merge=true)
 
     ax2 = Axis(fig[2, 1], xlabel="x", ylabel="analytical − OSQP",
         title="Pointwise differences (should hover near zero)")
@@ -91,7 +88,6 @@ using SparseArrays
 
     rowsize!(fig.layout, 1, Relative(0.65))
 
-    outpath = joinpath(@__DIR__, "analytical_vs_osqp.png")
-    save(outpath, fig)
-    @info "saved plot" outpath
+    save("test/analytical_vs_osqp.png", fig)
+    @info "saved plot" "analytical_vs_osqp.png"
 end
