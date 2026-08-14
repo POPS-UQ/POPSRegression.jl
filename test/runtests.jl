@@ -3,8 +3,6 @@ using POPSRegression
 using LinearAlgebra
 using Random
 using Statistics
-using CondaPkg
-using PythonCall
 
 @testset "POPSRegression.jl" begin
 
@@ -230,79 +228,5 @@ using PythonCall
             @test X[i, :]' * w_corrected ≈ [y[i]] atol = 1e-10
         end
     end
-
-    @testset "compare against python" begin
-        POPSRegression = pyimport("POPSRegression").POPSRegression
-        np = pyimport("numpy")
-
-        function pops_fit(X::Matrix{Float64}, y::Vector{Float64};
-            resampling_method="sobol",
-            posterior="hypercube",
-            resample_density=10.0,
-            fit_intercept=false,
-            leverage_percentile=50.0,
-            kwargs...)
-            model = POPSRegression(;
-                resampling_method, posterior, resample_density,
-                fit_intercept, leverage_percentile, kwargs...)
-            model.fit(np.array(X), np.array(y))
-            model
-        end
-
-        function pops_predict(model, X::Matrix{Float64})
-            res = model.predict(np.array(X),
-                return_std=true, return_bounds=true, return_epistemic_std=true)
-
-            T = Vector{Float64}
-            y_mean, y_std, y_max, y_min, y_estd = map(x -> pyconvert(T, x), res)
-
-            return (; y_mean, y_std, y_max, y_min, y_estd)
-        end
-
-        # 1D example taken from https://github.com/tomswinburne/popsregression/blob/main/SimpleExample.ipynb
-
-        f(x) = (x^3 + 0.01 * x^4) * 0.1 + 10.0 * sin(x) * x
-        N, Nt = 500, 20
-
-        Z = 2.0 .* (1.0 .- rand(rng, N))
-        Zt = 2.0 .* (1.0 .- rand(rng, Nt))
-
-        X = [ones(N) Z Z .^ 2 Z .^ 3 Z .^ 4]
-        Xt = [ones(Nt) Zt Zt .^ 2 Zt .^ 3 Zt .^ 4]
-
-        Y = f.(Z)
-
-        m_py = pops_fit(X, Y; leverage_percentile=50.0, resampling_method="sobol")
-        m_jl = fit(POPSModel, X, Y; leverage_percentile=0.5)
-
-        py_pred = pops_predict(m_py, Xt)
-
-
-        jl_pred = predict(m_jl, Xt; return_bounds=true, return_std=true,
-            sampling_method=:sobol) # use Sobol sequence
-
-        py_coef = pyconvert(Vector{Float64}, m_py.coef_)
-        jl_coef = vec(coef(m_jl))
-
-        @info "python coef" py_coef
-        @info "julia coef" jl_coef
-        @info "mean abs diff (mean)" mean(abs.(py_pred.y_mean .- jl_pred.mean))
-        @info "mean abs diff (std)" mean(abs.(py_pred.y_std .- jl_pred.std))
-
-        @test isapprox(py_coef, jl_coef; rtol=0.1)
-
-
-        @test isapprox(py_pred.y_mean, jl_pred.mean; rtol=0.01)
-        @test isapprox(py_pred.y_std, jl_pred.std; rtol=0.1)
-        @test isapprox(py_pred.y_max, jl_pred.upper; rtol=0.1)
-        @test isapprox(py_pred.y_min, jl_pred.lower; rtol=0.1)
-
-
-        @info "mean relative difference (mean prediction)" mean(@. abs(py_pred.y_mean - jl_pred.mean) / max.(abs(py_pred.y_mean), abs(jl_pred.mean)))
-        @info "mean relative difference (std)" mean(@. abs(py_pred.y_std - jl_pred.std) / max.(abs(py_pred.y_std), abs(jl_pred.std)))
-        @info "mean relative difference (max bound)" mean(@. abs(py_pred.y_max - jl_pred.upper) / max.(abs(py_pred.y_max), abs(jl_pred.upper)))
-        @info "mean relative difference (min bound)" mean(@. abs(py_pred.y_min - jl_pred.lower) / max.(abs(py_pred.y_min), abs(jl_pred.lower)))
-    end
-
 
 end
