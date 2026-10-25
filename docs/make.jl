@@ -15,6 +15,7 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "API reference" => "api.md",
+        "Constrained fitting" => "constraints.md",
         "Fitting an ACE model" => "ace.md",
         "Quantifying uncertainties in MD" => "md.md",
     ],

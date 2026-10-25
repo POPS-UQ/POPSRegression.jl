@@ -7,6 +7,8 @@ import StatsAPI: fit, predict, coef, nobs, dof, islinear, isfitted,
 using LinearAlgebra, Statistics
 using Random
 using Sobol
+using OSQP
+using SparseArrays
 
 export POPSModel, sample
 export fit, predict, coef, nobs, dof, islinear, isfitted,

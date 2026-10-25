@@ -17,7 +17,8 @@ Implemented models follow the
   - Leverage-based filtering of training points for efficient fitting                                                                              
   - Predictive uncertainty quantification: min–max bounds, standard deviations, and differential entropy estimates                                                
   - Compliance with the StatsAPI.jl interface                                                                                                                                            
-  - Unit testing, including sanity checks against the scikit-learn based [Python implementation](https://github.com/tomswinburne/popsregression)
+  - Linear equality and inequality constraints on the model coefficients (see [Constrained fitting](constraints.md))
+  - Unit testing, including checks of the constrained fit against closed-form solutions
   - Simple examples, including uncertainty quantification for a linear MLIP predictions, and structural quantities from subsequent molecular dynamics simulations.
 
 ## Installation
@@ -78,6 +79,6 @@ pred.std    # 10 × 2 empirical std
 ## Contents
 
 ```@contents
-Pages = ["./api.md", "./ace.md", "./md.md"]
+Pages = ["./api.md", "./constraints.md", "./ace.md", "./md.md"]
 Depth = 2
 ```

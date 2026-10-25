@@ -10,5 +10,6 @@ The name comes from the POPS regression algorithm from [Perez & Swinburne (2025)
   - Leverage-based filtering of training points for efficient fitting                                                                              
   - Predictive uncertainty quantification: min–max bounds, standard deviations, and differential entropy estimates                                                
   - Compliance with the StatsAPI.jl interface                                                                                                                                            
-  - Unit testing, including sanity checks against the scikit-learn based [Python implementation](https://github.com/tomswinburne/popsregression)
+  - Linear equality and inequality constraints on the model coefficients (constrained POPS, solved with [OSQP](https://osqp.org))
+  - Unit testing, including checks of the constrained fit against closed-form solutions
   - Simple examples, including uncertainty quantification for a linear MLIP predictions, and structural quantities from subsequent molecular dynamics simulations.
